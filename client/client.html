@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Demo</title>
+    </head>
+    <body>
+        <script src="./js/jquery-3.1.1.min.js"></script>
+        <script src="./js/preloadjs-next.min.js"></script>
+        <script src="./js/easeljs-next.min.js"></script>
+        <script src="./js/tweenjs-next.min.js"></script>
+        <style type="text/css">
+            body{
+                overflow: hidden;
+            }
+        </style>
+        <canvas id="face"></canvas>
+        <script>
+            let faceCanvas = document.getElementById("face");
+                faceCanvas.height = window.innerHeight;
+                faceCanvas.width = window.innerWidth;
+            let stage = new createjs.Stage(faceCanvas);
+            let scaleX = stage.canvas.width/640;
+            let scaleY = stage.canvas.height/480;
+
+            //let ws = new WebSocket("ws://192.168.0.105:5678/");
+            let ws = new WebSocket("ws://127.0.0.1:5678/");
+            let ws2 = new WebSocket("ws://127.0.0.10:5679/");
+            let loadResource = function(role, name, x, y, scaleX, scaleY, isVisiable) {
+                role.scaleX = scaleX;
+                role.scaleY = scaleY;
+                role.x = x;
+                role.y = y;
+                role.name = name;
+                role.visible = isVisiable;
+                stage.addChild(role)
+            }
+
+            function init(){
+                let preManifest = [{
+                    src: "normal.png",
+                    id: "normal"
+                },{
+                    src: "findface.png",
+                    id: "findface"
+                },{
+                    src: "smile-b1.png",
+                    id: "smile-b1"
+                },{
+                    src: "smile-b2.png",
+                    id: "smile-b2"
+                },{
+                    src: "beam.png",
+                    id: "beam"
+                },{
+                    src: "smile-shy1.png",
+                    id: "smile-shy1"
+                },{
+                    src: "smile-shy2.png",
+                    id: "smile-shy2"
+                },{
+                    src: "surprised_in.png",
+                    id: "surprised_in"
+                },{
+                    src: "surprised_out.png",
+                    id: "surprised_out"
+                },{
+                    src: "angry_in.png",
+                    id: "angry_in"
+                },{
+                    src: "angry_out.png",
+                    id: "angry_out"
+                },{
+                    src: "angry_loop.png",
+                    id: "angry_loop"
+                },{
+                    src: "sleepy_in1.png",
+                    id: "sleepy_in1"
+                },{
+                    src: "sleepy_in2.png",
+                    id: "sleepy_in2"
+                },{
+                    src: "sleepy_out.png",
+                    id: "sleepy_out"
+                },{
+                    src: "asleep_1.png",
+                    id: "asleep_1"
+                },{
+                    src: "asleep_2.png",
+                    id: "asleep_2"
+                },{
+                    src: "asleep_3.png",
+                    id: "asleep_3"
+                },{
+                    src: "dizzy_1.png",
+                    id: "dizzy_1"
+                },{
+                    src: "dizzy_2.png",
+                    id: "dizzy_2"
+                },{
+                    src: "dizzy_3.png",
+                    id: "dizzy_3"
+                },{
+                    src: "anxious_1.png",
+                    id: "anxious_1"
+                },{
+                    src: "anxious_2.png",
+                    id: "anxious_2"
+                },{
+                    src: "anxious_3.png",
+                    id: "anxious_3"
+                },{
+                    src: "heng_1.png",
+                    id: "heng_1"
+                },{
+                    src: "heng_2.png",
+                    id: "heng_2"
+                },{
+                    src: "heng_3.png",
+                    id: "heng_3"
+                },{
+                    src: "kiss_1.png",
+                    id: "kiss_1"
+                },{
+                    src: "kiss_2.png",
+                    id: "kiss_2"
+                },{
+                    src: "kiss_3.png",
+                    id: "kiss_3"
+                },{
+                    src: "talk.png",
+                    id: "talk"
+                },{
+                    src: "talk_2.png",
+                    id: "talk_2"
+                },{
+                    src: "talk_short.png",
+                    id: "talk_short"
+                }]
+
+                let preLoader = new createjs.LoadQueue(false);
+                preLoader.installPlugin(createjs.Sound);
+                preLoader.loadManifest(preManifest, true, "./media/");
+                preLoader.addEventListener("complete", function() {
+
+                    let normalSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("normal")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "play": [0, 55]
+                        }
+                    });
+                    
+                    let findfaceSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("findface")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "play": [0, 24]
+                        }
+                    });
+
+                    let smileSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("smile-b1"),preLoader.getResult("smile-b2")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "play": [0, 32]
+                        }
+                    });
+
+                    let beamSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("beam")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "play": [0,47] //24 is middle point
+                        }
+                    });
+
+                    let shySheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("smile-shy1"),preLoader.getResult("smile-shy2")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "go": [0, 47] // 24 is middle point
+
+                        }
+                    });
+
+                    let surprisedSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("surprised_in"),preLoader.getResult("surprised_out")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            // go: [0, 51, "back", 1],
+                            // back: [52, 86, null, 1]
+                            "go": [0, 86]
+                        }
+                    });
+
+                    let angrySheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("angry_in"),preLoader.getResult("angry_loop"),preLoader.getResult("angry_out")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            // go: [0, 49, "loop", 1],
+                            // loop: [50, 74, "loop", 1],
+                            // back: [75, 124, null, 1]
+                            "go": [0, 124]
+                        }
+                    });
+
+                    let sleepySheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("sleepy_in1"),preLoader.getResult("sleepy_in2"),preLoader.getResult("sleepy_out")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            // go: [0, 74, "back", 1],
+                            // back: [75, 124, null, 1]
+                            "go": [0, 124]
+                        }
+                    });
+
+                    let asleepSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("asleep_1"),preLoader.getResult("asleep_2"),preLoader.getResult("asleep_3")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "go": [0, 57,"loop",1],
+                            "loop": [58, 104, "loop", 1],
+                            "back": [105, 148]
+                        }
+                    });
+
+                    let dizzySheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("dizzy_1"),preLoader.getResult("dizzy_2"),preLoader.getResult("dizzy_3")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "go": [0, 124]
+                        }
+                    });
+
+                    let anxiousSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("anxious_1"),preLoader.getResult("anxious_2"),preLoader.getResult("anxious_3")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            // go: [0, 80, null, 1],
+                            // back: [81, 102, null, 1]
+                            "go": [0, 102]
+                        }
+                    });
+
+                    let kissSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("kiss_1"),preLoader.getResult("kiss_2"),preLoader.getResult("kiss_3")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            // go: [0, 40, "loop", 1],
+                            // loop: [41, 71, "loop", 1],
+                            // back: [72, 100, null, 1]
+                            "go": [0, 100]
+
+                        }
+                    });
+
+                    let hengSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("heng_1"),preLoader.getResult("heng_2"),preLoader.getResult("heng_3")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            // go: [0, 73, null, 1],
+                            // back: [74, 100, null, 1]
+                            "go": [0, 100]
+                        }
+                    });
+
+                    let talkSmileSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("talk_short"),preLoader.getResult("normal")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "go": [0, 89]
+                        }
+                    });
+
+                    let talkSheet = new createjs.SpriteSheet({
+                        framerate: 24,
+                        "images": [preLoader.getResult("talk"),preLoader.getResult("talk_2"),preLoader.getResult("talk"),preLoader.getResult("talk_2"),preLoader.getResult("talk"),preLoader.getResult("talk_2")],
+                        "frames": {
+                            "regX": 0,
+                            "height": 480,
+                            "count": 0,
+                            "regY": 0,
+                            "width": 640
+                        },
+                        // define two animations, run (loops, 1.5x speed) and jump (returns to run):
+                        "animations": {
+                            "go": [0, 175],
+                            "go2": [0, 263]
+                        }
+                    });
+
+
+                    let normal = new createjs.Sprite(normalSheet);
+                    let findface = new createjs.Sprite(findfaceSheet);
+                    let findface2 = new createjs.Sprite(findfaceSheet);
+                    let smile = new createjs.Sprite(smileSheet);
+                    let beam = new createjs.Sprite(beamSheet);
+                    let shy = new createjs.Sprite(shySheet);
+                    let surprised = new createjs.Sprite(surprisedSheet);
+                    let angry = new createjs.Sprite(angrySheet);
+                    let sleepy = new createjs.Sprite(sleepySheet);
+                    let asleep = new createjs.Sprite(asleepSheet);
+                    let dizzy = new createjs.Sprite(dizzySheet);
+
+                    let anxious = new createjs.Sprite(anxiousSheet);
+                    let heng = new createjs.Sprite(hengSheet);
+                    let kiss = new createjs.Sprite(kissSheet);
+                    let talk = new createjs.Sprite(talkSheet);
+                    let talkSmile = new createjs.Sprite(talkSmileSheet);
+
+
+                    //indicate playing status
+                    let playing = false;
+                    let waiting = false;
+                    let isBeam = false;
+                    let isShy = false;
+
+                    //audio pre
+                    let audioStart = false;
+
+                    let emoList = [];
+                    emoList.push(normal, findface, findface2, smile, beam, shy, surprised, angry, sleepy, asleep, dizzy, anxious, heng, kiss, talk, talkSmile)
+
+                    var clearEmo = function(){
+                        for(emo in emoList){
+                            emoList[emo].visible = false
+                            emoList[emo].gotoAndStop(0)
+                        }
+                    }
+
+                    normal.addEventListener("animationend", function(){
+                        playing = false;
+                        normal.stop();
+                    })
+
+                    smile.addEventListener("animationend", function(){
+                        playing = false;
+                        smile.stop();
+                    })
+
+                    findface.addEventListener("animationend", function(){
+                        playing = false;
+                        findface.stop();
+                    })
+
+                    smile.addEventListener("animationend", function(){
+                        playing = false;
+                        smile.stop();
+                    })
+
+                    angry.addEventListener("animationend", function(){
+                        playing = false;
+                        angry.stop();
+                    })
+
+                    surprised.addEventListener("animationend", function(){
+                        playing = false;
+                        surprised.stop();
+                    })
+
+                    sleepy.addEventListener("animationend", function(){
+                        playing = false;
+                        sleepy.stop();
+                    })
+
+                    anxious.addEventListener("animationend", function(){
+                        playing = false;
+                        anxious.stop();
+                    })
+
+                    kiss.addEventListener("animationend", function(){
+                        playing = false;
+                        kiss.stop();
+                    })
+
+
+                    heng.addEventListener("animationend", function(){
+                        playing = false;
+                        heng.stop();
+                    })
+
+                    talk.addEventListener("animationend", function(){
+                        audioStart = false
+                        playing = false;
+                        talk.stop();
+                    })
+
+                    talkSmile.addEventListener("animationend", function(){
+                        audioStart = false;
+                        playing = false;
+                        talkSmile.stop();
+                    })
+
+
+                    dizzy.addEventListener("animationend", function(){
+                        playing = false;
+                        dizzyThreshold = 5;
+                        dizzy.stop();
+                    })
+
+
+                    asleep.addEventListener("change", function(){
+                        if(asleep.currentFrame == 148){
+                            playing = false
+                            asleep.stop();
+                            clearEmo()
+                            findface.visible = true
+                            findface.play()
+                        }
+                    })
+
+
+                    loadResource(normal, "normal", 0, 0, scaleX, scaleY,true);
+                    loadResource(findface, "findface", 0, 0, scaleX, scaleY,false);
+                    loadResource(findface2, "findface", stage.canvas.width/2, stage.canvas.height/2, 0, 0,false);
+                    loadResource(smile, "smile", 0, 0, scaleX, scaleY,false);
+                    loadResource(beam, "beam", 0, 0, scaleX, scaleY, false);
+                    loadResource(shy, "shy", 0, 0, scaleX, scaleY, false);
+                    loadResource(surprised, "surprised", 0, 0, scaleX, scaleY, false);
+                    loadResource(angry, "angry", 0, 0, scaleX, scaleY, false);
+                    loadResource(sleepy, "sleepy", 0, 0, scaleX, scaleY, false);
+                    loadResource(asleep, "asleep", 0, 0, scaleX, scaleY, false);
+                    loadResource(dizzy, "dizzy", 0, 0, scaleX, scaleY, false);
+
+                    loadResource(anxious, "anxious", 0, 0, scaleX, scaleY, false);
+                    loadResource(kiss, "kiss", 0, 0, scaleX, scaleY, false);
+                    loadResource(heng, "heng", 0, 0, scaleX, scaleY, false);
+                    loadResource(talk, "talk", 0, 0, scaleX, scaleY, false);
+                    loadResource(talkSmile, "talk", 0, 0, scaleX, scaleY, false);
+
+
+                    normal.play();
+                    let normalTimes = 0;
+
+                    findface.addEventListener("animationend", function(){
+                        findface.gotoAndStop(24);
+                    })
+
+                    normal.addEventListener("change", function(){
+                        // console.log(normal.currentFrame)
+                        if(normal.currentFrame==36){
+                            normal.stop()
+                            //waiting = true
+                            setTimeout(function(){
+                                //waiting = false
+                                normal.play()
+                            },2000)
+                            //console.log("pause")
+                        }
+                    })
+
+                    normal.addEventListener("animationend", function(){
+                        // console.log(normal.currentFrame)
+                        normal.stop()
+                        //waiting = true
+                        normalTimes++;
+                        if(normalTimes > 2){
+                            normal.visible = false
+                            asleep.visible = true
+                            asleep.gotoAndPlay("go")
+                        }
+                        else if(normalTimes <= 2){
+                            setTimeout(function(){
+                                //waiting = false
+                                normal.play()
+                            },2000)
+                        }
+
+                        //console.log("pause")
+                        
+                    })
+
+                    let timeoutBeam=null;
+                    beam.addEventListener("tick", function(){
+                        if(isBeam && beam.currentFrame==24 && beam.isVisible()){
+                            if(!timeoutBeam){
+                                //console.log("stop beam")
+                                beam.stop() //skip current frame
+                                playing = false
+                                timeoutBeam = setTimeout(function(){
+                                    playing = true
+                                    waiting = false
+                                    beam.visible = false
+                                    shy.visible = true;
+                                    shy.gotoAndPlay("go")
+                                }, 500)
+                            }
+                        }else if(!isBeam && beam.currentFrame==24 && beam.isVisible()){
+                            //console.log("cancel")
+                            clearTimeout(timeoutBeam)
+                            timeoutBeam=null
+                            playing = true;
+                            beam.play();
+                        }
+                    })
+
+
+                    beam.addEventListener("animationend", function(){
+                        playing = false
+                        //beam.visible = false;
+                        beam.gotoAndStop(0);
+                        //console.log("End beam");
+                    })
+
+                    shy.addEventListener("tick", function(){
+                        if(isShy && shy.currentFrame==24){
+                            //console.log("stop shy")
+                            playing = false
+                            shy.stop();
+                        }else if(!isShy && shy.currentFrame==24){
+                            //console.log("continue shy")
+                            playing = true
+                            shy.play();
+                        }
+                    })
+
+                    shy.addEventListener("animationend", function(){
+                        playing = false
+                        shy.gotoAndStop(0);
+                        shy.visible = false;
+                        beam.visible = true;
+                    })
+
+
+                    let beamTimes = 0;
+                    let defaultMouthY = null;
+                    let defaultMouthX = null;
+                    let defaultEyebrowY = null;
+                    let defaultEyebrowX = null;
+                    let defaultLipNoseY = null;
+                    let defaultRightLip = null;
+                    let blink = null
+
+                    let faceTimeout;
+                    let dizzyThreshold = 5;
+
+                    ws.onmessage = function (event) {
+                        let result = event.data.split(",")
+
+                        //console.log(result)
+
+                        //Found a face
+                        if(result.length==12 && !playing && !audioStart){
+                            let mouthY, mouthX, eyeBrowY, eyeBrowX, lipNoseY, faceWidth, faceHeight, faceNum, faceIndex, faceRotate, rightLip;
+
+                            if(faceTimeout){
+                                clearTimeout(faceTimeout)
+                                faceTimeout = null
+                            }
+                            
+                            faceWidth = parseInt(result[6]);
+                            faceHeight = parseInt(result[7]);
+                            faceNum = parseInt(result[8]);
+                            faceIndex = parseInt(result[9]);
+                            faceRotate = parseInt(result[10]);
+                            rightLip = parseInt(result[11])
+
+                            if(!defaultMouthY){
+                                defaultMouthY = parseInt(result[0])/faceHeight;
+                                mouthY=0;
+                            }
+                            else{                                
+                                mouthY=parseInt(result[0])/faceHeight-defaultMouthY
+                            }
+
+
+                            if(!defaultMouthX){
+                                defaultMouthX = parseInt(result[1])/faceWidth;
+                                mouthX=0;
+                            }
+                            else{
+                                mouthX = (parseInt(result[1])/faceWidth-defaultMouthX);
+                            }
+
+                            if(!defaultEyebrowY){
+                                defaultEyebrowY = parseInt(result[2])/faceHeight;
+                                eyeBrowY=0;
+                            }
+                            else{
+                                eyeBrowY = (parseInt(result[2])/faceHeight-defaultEyebrowY);
+                            }
+
+                            if(!defaultEyebrowX){
+                                defaultEyebrowX = parseInt(result[3])/faceWidth;
+                                eyeBrowX=0
+                            }
+                            else{
+                                eyeBrowX = defaultEyebrowX-parseInt(result[3])/faceWidth;
+                            }
+
+                            if(!defaultLipNoseY){
+                                defaultLipNoseY = parseInt(result[4])/faceHeight;
+                                lipNoseY=0;
+                            }
+                            else{
+                                lipNoseY = defaultLipNoseY - parseInt(result[4])/faceHeight;
+                            }
+
+
+                            faceRotate = parseInt(result[10])/faceWidth
+
+                            if(!defaultRightLip){
+                                defaultRightLip = parseInt(result[11])/faceHeight;
+                                rightLip=0;
+                            }
+                            else{
+                                rightLip = parseInt(result[11])/faceHeight-defaultRightLip;
+                            }
+
+
+                            blink = result[5]
+
+                            // console.log("var ", parseInt(result[1]))
+                            // console.log("ref", faceWidth)
+                            // console.log("eyeBrowY: ", eyeBrowY.toFixed(2));
+                            // console.log("eyeBrowX: ", eyeBrowX.toFixed(2));
+                            // console.log("leftLip", leftLip)
+                            // console.log("rightLip", rightLip)
+
+                            // console.log("faceRotate", faceRotate)
+                            // console.log("lipNoseY: ", lipNoseY.toFixed(2))
+                            // console.log("mouthY: ", mouthY)
+                            // console.log("mouthX: ", mouthX)
+
+                            if(normal.visible==true){
+                                normal.visible = false
+                                normal.gotoAndStop(0)
+                                clearEmo()
+                                findface.visible = true
+                                findface.play()
+                                playing = true
+                            }
+
+                            if(asleep.visible==true){
+                                asleep.gotoAndPlay("back")
+                                playing = true                           
+                            }
+                            
+
+                            // if(faceNum==2){
+                            //     console.log("Two faces!!!!!")
+                            //     // findface.regX = faceCanvas.width/2;
+                            //     if(findface.regY != -stage.canvas.height/2)
+                            //         findface.regY = -stage.canvas.height/2;
+                            //     if(findface.scaleX>0.5)
+                            //         findface.scaleX -= 0.01;
+                            //     if(findface.scaleY>0.5)
+                            //         findface.scaleY -= 0.01;
+                            //     findface2.visible = true;
+                            //     if(findface2.scaleX<0.5)
+                            //         findface2.scaleX += 0.01;
+                            //     if(findface2.scaleY<0.5)
+                            //         findface2.scaleY += 0.01;
+
+
+                            // }else if(faceNum==1){
+                            //     console.log("One face!!!!!")
+                            //     if(findface.regY !=0)
+                            //         findface.regY = 0;
+                            //     if(findface.scaleX<1)
+                            //         findface.scaleX += 0.01;
+                            //     if(findface.scaleY<1)
+                            //         findface.scaleY += 0.01;
+                            //     if(findface2.scaleX>0)
+                            //         findface2.scaleX -= 0.01;
+                            //     else if(findface2.scaleX==0)
+                            //         findface2.visible = false
+                            //     if(findface2.scaleY>0)
+                            //         findface2.scaleY -= 0.01;
+                            // }
+
+                                                        if(Math.abs(mouthY)>=0 && mouthY<0.03 && mouthX>=0.06){
+                                playing = true
+                                clearEmo()  
+                                beam.visible = true;
+                                beam.gotoAndPlay("play");
+                                if(!isShy)
+                                    isShy = true
+                                if(!isBeam)
+                                    isBeam = true
+                            }else if(mouthY>=0.03 && mouthY<0.09 && mouthX>=0.06){
+                                playing = true
+                                clearEmo()  
+                                smile.visible = true    
+                                smile.play();
+                            }else if(eyeBrowX<0.04 && Math.abs(lipNoseY)>=0.06){
+                                playing = true
+                                clearEmo()
+                                angry.visible = true    
+                                angry.play();
+                            }else if(mouthY>=0.09 && mouthX<-0.03 && Math.abs(eyeBrowY) >=0.05){
+                                playing = true
+                                clearEmo()
+                                surprised.visible = true
+                                surprised.play();        
+                            }else if(mouthY>=0.09 && mouthX>=0.02 && mouthX<0.07){
+                                playing = true
+                                clearEmo();
+                                sleepy.visible = true   
+                                sleepy.play();
+                            }else if(Math.abs(eyeBrowX)>=0.04 && Math.abs(lipNoseY)>=0.05){
+                                playing = true
+                                clearEmo();
+                                anxious.visible = true   
+                                anxious.play();
+                            }else if(faceRotate<0.35){
+                                playing = true
+                                clearEmo();
+                                kiss.scaleX = scaleX
+                                kiss.x = 0;
+                                kiss.visible = true   
+                                kiss.play();
+                            }else if(faceRotate>0.65){
+                                playing = true
+                                clearEmo();
+                                kiss.scaleX = -scaleX
+                                kiss.x += kiss.getTransformedBounds().width;
+                                kiss.visible = true
+                                kiss.play();
+                            }else if(Math.abs(rightLip) > 0.1){
+                                playing = true
+                                clearEmo();
+                                heng.visible = true   
+                                heng.play();
+                            }else{
+                                isShy = false;
+                                isBeam = false;
+                            }
+                        }
+                        //NO face is found
+                        else if(result.length==1 && !playing && !audioStart){
+
+                            if(!faceTimeout){
+
+                                faceTimeout = setTimeout(function(){
+
+                                    beamTimes = 0;
+                                    defaultMouthY = null;
+                                    defaultMouthX = null;
+                                    defaultEyebrowY = null;
+                                    defaultEyebrowX = null;
+                                    defaultLipNoseY = null;
+                                    // defaultFaceRotate = null;
+                                    defaultRightLip = null;
+                                    defaultLeftLip = null;
+                                    blink = null
+
+                                    sleepTimeout, faceTimeout;
+
+                                    dizzyThreshold = 5;
+
+                                    clearEmo()
+                                    normal.visible = true
+                                    normal.play()
+                                    playing = true
+
+                                },2000)
+
+                            }
+                        }           
+                    }
+
+                    ws2.onmessage = function (event) {
+                        
+                        let result = event.data.split(",")
+                        
+                        if(result[1]>5){
+                            dizzyThreshold--
+                        }
+
+
+                        if(dizzyThreshold==0){
+                        	audioStart = true;
+                            playing = true
+                            clearEmo()
+                            dizzy.visible = true;
+                            dizzy.gotoAndPlay("play");
+                        }else{
+                            if(result[0]>=1 && result[0]<=10 && !playing){
+                            	audioStart = true;
+	                            clearEmo()
+	                            talkSmile.visible=true
+	                            talkSmile.play()
+	                            playing = true
+                            }else if(result[0]>=17 && result[0]<=24 || result[0]==34 && !playing){
+                            	audioStart = true;
+                                clearEmo()&& !playing
+                                talkSmile.visible=true
+	                            talkSmile.play()
+	                            playing = true
+                            }else if(result[0]==25 || result[0]==32 || result[0]==36 || result[0]==38 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                talk.visible=true
+	                            talk.gotoAndPlay("go2")
+	                            playing = true
+                            }else if(result[0]==33 || result[0]==35 || result[0]==37 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                talk.visible=true
+	                            talk.gotoAndPlay("go")
+	                            playing = true
+                            }else if(result[0]>=39 && result[0]<=41 || result[0]==48 || result[0]==49 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                talkSmile.visible=true
+	                            talkSmile.play()
+	                            playing = true
+                            }else if(result[0] == 50 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                sleepy.visible=true
+                                sleepy.play()
+                                playing = true
+                            }else if(result[0] == 51 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                angry.visible=true
+                                angry.play()
+                                playing = true
+                            }else if(result[0] == 52 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                shy.visible=true
+                                shy.play()
+                                playing = true
+                            }else if(result[0] == 53 && !playing){
+                            	audioStart = true;
+                                clearEmo()
+                                beam.visible=true
+                                beam.play()
+                                playing = true
+                            }
+                        }
+                    }
+
+                })
+
+                createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
+                createjs.Ticker.framerate = 24;
+                createjs.Ticker.on("tick", tick);
+
+                function tick() {
+                    stage.update();
+                }
+            }
+
+            init()
+
+        </script>
+    </body>
+</html>
